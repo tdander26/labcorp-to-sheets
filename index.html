@@ -798,11 +798,12 @@ function doGet(e) {
                     row.sort((a, b) => a.x - b.x);
                     const fullText = row.map(r => r.text).join(' ');
 
-                    // Patient info
+                    // Patient info — Labcorp names are ALL CAPS e.g. "ANDERSON, TODD"
                     if (!patientInfo.name && row.length > 0) {
-                        const nameMatch = fullText.match(/^([A-Za-z]+,\s*[A-Za-z]+)/);
+                        const nameMatch = fullText.match(/^([A-Z]+,\s*[A-Z]+)/);
                         if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©')) {
-                            patientInfo.name = nameMatch[1];
+                            // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
+                            patientInfo.name = nameMatch[1].replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
                         }
                     }
 
@@ -934,7 +935,7 @@ function doGet(e) {
 
             const spreadsheetId = document.getElementById('templateSheetId').value;
             const sheetName = document.getElementById('sheetTabName').value;
-            const newName = `${patientInfo.name || 'Patient'} - ${patientInfo.date || new Date().toISOString().split('T')[0]}`.substring(0, 100);
+            const newName = `${patientInfo.name || 'Patient'} ${patientInfo.date || new Date().toISOString().split('T')[0]}`.substring(0, 100);
 
             // Build update list
             const updates = [];
