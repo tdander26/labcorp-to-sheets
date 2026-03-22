@@ -804,9 +804,9 @@ function doGet(e) {
                     const fullText = row.map(r => r.text).join(' ');
 
                     // Patient info — Labcorp names are ALL CAPS e.g. "ANDERSON, TODD"
-                    // Search anywhere in the row (not anchored to start) to handle "Patient: NAME" layouts
+                    // Match name at start of row, or immediately after a "Patient:" / "Patient Name:" label
                     if (!patientInfo.name && row.length > 0) {
-                        const nameMatch = fullText.match(/([A-Z]{2,},\s*[A-Z]{2,}(?:\s+[A-Z]\.?)?)/);
+                        const nameMatch = fullText.match(/^(?:Patient(?:\s+Name)?:\s*)?([A-Z]{3,},\s*[A-Z]{3,}(?:\s+[A-Z]\.?)?)/);
                         if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©') && !fullText.includes('LABCORP')) {
                             // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
                             patientInfo.name = nameMatch[1].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
