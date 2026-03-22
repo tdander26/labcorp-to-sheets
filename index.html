@@ -705,6 +705,11 @@ function doGet(e) {
             'ANA by IFA Rfx Titer/Pattern': { row: 99, section: 'Additional' },
         };
 
+        // Tests that return text values (e.g. Positive/Negative) instead of numbers
+        const TEXT_VALUE_TESTS = new Set([
+            'ANA by IFA Rfx Titer/Pattern'
+        ]);
+
         let extractedData = null;
         let patientInfo = null;
 
@@ -799,11 +804,12 @@ function doGet(e) {
                     const fullText = row.map(r => r.text).join(' ');
 
                     // Patient info — Labcorp names are ALL CAPS e.g. "ANDERSON, TODD"
+                    // Search anywhere in the row (not anchored to start) to handle "Patient: NAME" layouts
                     if (!patientInfo.name && row.length > 0) {
-                        const nameMatch = fullText.match(/^([A-Z]+,\s*[A-Z]+)/);
-                        if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©')) {
+                        const nameMatch = fullText.match(/([A-Z]{2,},\s*[A-Z]{2,}(?:\s+[A-Z]\.?)?)/);
+                        if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©') && !fullText.includes('LABCORP')) {
                             // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
-                            patientInfo.name = nameMatch[1].replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                            patientInfo.name = nameMatch[1].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
                         }
                     }
 
@@ -848,7 +854,9 @@ function doGet(e) {
 
                             // Look up test name in our mapping
                             const mapping = TEST_MAP[testName];
-                            if (mapping && rawValue.match(/^[<>]?[\d.]+$/)) {
+                            const isNumericValue = rawValue.match(/^[<>]?[\d.]+$/);
+                            const isTextValue = TEXT_VALUE_TESTS.has(testName) && rawValue.match(/^[A-Za-z][A-Za-z\s\-\/\.]*$/);
+                            if (mapping && (isNumericValue || isTextValue)) {
                                 results[testName] = {
                                     value: rawValue,
                                     row: mapping.row,
