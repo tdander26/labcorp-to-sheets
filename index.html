@@ -804,12 +804,16 @@ function doGet(e) {
                     const fullText = row.map(r => r.text).join(' ');
 
                     // Patient info — Labcorp names are ALL CAPS e.g. "ANDERSON, TODD"
-                    // Match name at start of row, or immediately after a "Patient:" / "Patient Name:" label
+                    // Check each individual PDF text item for an exact name match (LASTNAME, FIRSTNAME).
+                    // Using item.text with ^ and $ prevents partial matches against addresses/other text.
                     if (!patientInfo.name && row.length > 0) {
-                        const nameMatch = fullText.match(/^(?:Patient(?:\s+Name)?:\s*)?([A-Z]{3,},\s*[A-Z]{3,}(?:\s+[A-Z]\.?)?)/);
-                        if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©') && !fullText.includes('LABCORP')) {
-                            // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
-                            patientInfo.name = nameMatch[1].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                        for (const item of row) {
+                            const nameMatch = item.text.match(/^([A-Z]{3,},\s*[A-Z]{3,}(?:\s+[A-Z]\.?)?)$/);
+                            if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©') && !fullText.includes('LABCORP')) {
+                                // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
+                                patientInfo.name = nameMatch[1].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                                break;
+                            }
                         }
                     }
 
@@ -1106,3 +1110,4 @@ function doGet(e) {
     </script>
 </body>
 </html>
+
