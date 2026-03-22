@@ -803,14 +803,16 @@ function doGet(e) {
                     row.sort((a, b) => a.x - b.x);
                     const fullText = row.map(r => r.text).join(' ');
 
-                    // Patient info — Labcorp names are ALL CAPS e.g. "ANDERSON, TODD"
-                    // Check each individual PDF text item for an exact name match (LASTNAME, FIRSTNAME).
+                    // Patient info — Labcorp names are Title Case e.g. "Wuebbeling, Cheryl B"
+                    // Check each individual PDF text item for an exact name match (Lastname, Firstname [Initial]).
                     // Using item.text with ^ and $ prevents partial matches against addresses/other text.
                     if (!patientInfo.name && row.length > 0) {
                         for (const item of row) {
-                            const nameMatch = item.text.match(/^([A-Z]{3,},\s*[A-Z]{3,}(?:\s+[A-Z]\.?)?)$/);
-                            if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©') && !fullText.includes('LABCORP')) {
-                                // Normalize ALL CAPS to Title Case: "ANDERSON, TODD" → "Anderson, Todd"
+                            // Matches Title Case: first letter uppercase, 2+ more letters, comma, space, same pattern
+                            // State abbreviations (OH, MO, MN etc.) are only 2 chars and won't match [a-zA-Z]{2,}
+                            const nameMatch = item.text.match(/^([A-Z][a-zA-Z]{2,},\s*[A-Z][a-zA-Z]{2,}(?:\s+[A-Z]\.?)?)$/);
+                            if (nameMatch && !fullText.includes('Physician') && !fullText.includes('©')) {
+                                // Ensure Title Case (handles edge cases where PDF may use ALL CAPS)
                                 patientInfo.name = nameMatch[1].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
                                 break;
                             }
