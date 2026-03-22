@@ -896,8 +896,9 @@ function doGet(e) {
 
         function displayPatient(info) {
             const banner = document.getElementById('patientBanner');
-            if (info.name) {
-                document.getElementById('patientName').textContent = info.name;
+            // Show banner as long as we have any patient info — not just when name was found
+            if (info.name || info.date || info.age || info.sex) {
+                document.getElementById('patientName').textContent = info.name || 'Name not found';
                 document.getElementById('patientDate').textContent = info.date || '-';
                 document.getElementById('patientAge').textContent = info.age || '-';
                 document.getElementById('patientSex').textContent = info.sex === 'F' ? 'Female' : info.sex === 'M' ? 'Male' : '-';
